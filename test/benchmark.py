@@ -32,7 +32,7 @@ def benchmark(matrix_size, matrix_type):
     return elapsed_time, count
 
 def main():
-    matrix_sizes = np.arange(1, 50, 1)
+    matrix_sizes = np.arange(1, 51, 1)
     matrix_types = ['numpy', 'torch', 'python']
     times = {matrix_type: [] for matrix_type in matrix_types}
 

@@ -6,6 +6,14 @@
 
 ## Installation
 
+### Automatic
+
+```bash
+pip install git+https://github.com/vjdad4m/no3inline
+```
+
+### Manual
+
 Clone the repository
 ```bash
 git clone https://github.com/vjdad4m/no3inline.git
