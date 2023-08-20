@@ -13,7 +13,7 @@ ext_modules_list = []
 
 if args.with_cuda or torch.cuda.is_available():
     ext_modules_list.append(
-        cpp_extension.CppExtension('collinear_cuda', ['collinear_kernel.cu', 'collinear.cpp'],
+        cpp_extension.CppExtension('collinear_cuda', ['no3inline/collinear_kernel.cu', 'no3inline/collinear.cpp'],
                                    extra_compile_args={'cxx': ['-g'], 'nvcc': ['-O2']})
     )
 
