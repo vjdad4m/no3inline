@@ -6,14 +6,16 @@ from setuptools import setup
 from torch.utils import cpp_extension
 
 parser = argparse.ArgumentParser(description="Build options")
-parser.add_argument('--with-cuda', action='store_true', default=False, help="Compile with CUDA submodule")
+parser.add_argument('--with-cuda', action='store_true', default=False, help="Explicitly request to compile with CUDA submodule")
+parser.add_argument('--no-cuda', action='store_true', default=False, help="Explicitly request to not compile with CUDA submodule")
 args, unknown = parser.parse_known_args()
 
 ext_modules_list = []
 
-if args.with_cuda or torch.cuda.is_available():
+# Include CUDA only if --with-cuda is given or CUDA is available, unless --no-cuda is explicitly provided
+if (args.with_cuda or torch.cuda.is_available()) and not args.no_cuda:
     ext_modules_list.append(
-        cpp_extension.CppExtension('collinear_cuda', ['no3inline/collinear_kernel.cu', 'no3inline/collinear.cpp'],
+        cpp_extension.CppExtension('no3inline._collinear_cuda', ['no3inline/collinear_kernel.cu', 'no3inline/collinear.cpp'],
                                    extra_compile_args={'cxx': ['-g'], 'nvcc': ['-O2']})
     )
 

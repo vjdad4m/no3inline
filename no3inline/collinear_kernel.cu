@@ -1,6 +1,7 @@
 #include <torch/extension.h>
 
 typedef long long ll;
+
 typedef struct {
     ll x;
     ll y;
@@ -13,13 +14,13 @@ __device__ int turn(pt a, pt b, pt c) {
 }
 
 __global__ void countCollinearKernel(pt *p, int p_size, int *result) {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i < p_size) {
-        for (int j = i + 1; j < p_size; j++) {
-            for (int l = j + 1; l < p_size; l++) {
-                if (!turn(p[i], p[j], p[l])) {
-                    atomicAdd(result, 1);
-                }
+    const int i = blockIdx.x;
+    const int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < p_size && j < p_size && j > i) {
+        for (int l = j + 1; l < p_size; l++) {
+            if (!turn(p[i], p[j], p[l])) {
+                atomicAdd(result, 1);
             }
         }
     }
@@ -29,10 +30,11 @@ torch::Tensor countCollinear(torch::Tensor points) {
     const int p_size = points.size(0);
     auto result = torch::zeros({1}, torch::kInt32).to(points.device());
 
-    const int threads = 256;
-    const int blocks = (p_size + threads - 1) / threads;
+    dim3 block_dim(1, 256);  // Here, 1 block in x and 256 threads in y.
+    dim3 grid_dim(p_size, (p_size + block_dim.y - 1) / block_dim.y);
     
-    countCollinearKernel<<<blocks, threads>>>(reinterpret_cast<pt*>(points.data_ptr()), p_size, result.data_ptr<int>());
+    countCollinearKernel<<<grid_dim, block_dim>>>(reinterpret_cast<pt*>(points.data_ptr()), p_size, result.data_ptr<int>());
 
+    cudaDeviceSynchronize();
     return result;
 }
