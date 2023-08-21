@@ -18,6 +18,10 @@ if (args.with_cuda or torch.cuda.is_available()) and not args.no_cuda:
         cpp_extension.CppExtension('no3inline._collinear_cuda', ['no3inline/collinear_kernel.cu', 'no3inline/collinear.cpp'],
                                    extra_compile_args={'cxx': ['-g'], 'nvcc': ['-O2']})
     )
+    ext_modules_list.append(
+        cpp_extension.CppExtension('no3inline._find_3_in_line', ['no3inline/find_3_in_line.cu'],
+                                   extra_compile_args={'cxx': ['-g'], 'nvcc': ['-O2']})
+    )
 
 ext_modules_list.extend(cythonize("no3inline/wrapper.pyx"))
 
