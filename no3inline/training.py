@@ -115,11 +115,7 @@ for _ in tq:
     
     tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
 
-<<<<<<< HEAD
-    rollouts = rollouts[:N_ROLLOUTS * 4]
-=======
     rollouts = rollouts[:N * N_ROLLOUTS * 4]
->>>>>>> 1d7d0f9d13596d6a7aa835bc619ca7bf6b37b003
 
 wandb.log_artifact(model)
 
