@@ -1,2 +1,5 @@
 cython
 torch
+numpy
+tqdm
+matplotlib
