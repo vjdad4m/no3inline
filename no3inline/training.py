@@ -115,6 +115,7 @@ for _ in tq:
     
     tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
 
+    rollouts = rollouts[:N * N_ROLLOUTS * 4]
 
 wandb.log_artifact(model)
 
