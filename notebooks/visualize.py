@@ -1,4 +1,3 @@
-# %%
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -36,7 +35,3 @@ grid = [
 ]
 
 visualize_grid(grid)
-
-
-
-
