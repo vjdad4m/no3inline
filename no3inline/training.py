@@ -109,12 +109,21 @@ def train(HYPERPARAMETERS):
 
     rollouts = []
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
-    for _ in tq:
-        rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
-                         for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
+    for i in tq:
+        # - Simple rollout generation
+        # rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
+        #                 for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
+
+        # - Batched rollout generation
+        rollouts.extend(generate_batched_rollout(model, HYPERPARAMETERS['N'], HYPERPARAMETERS['N_ROLLOUTS'], device, HYPERPARAMETERS['REWARD_TYPE']))
+    
         rollouts.sort(key=lambda x: x[1])
         
         top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * HYPERPARAMETERS['TOP_K_PERCENT'])]
+        
+        # Uncomment if using simple rollout generation
+        # top_k = torch.stack(top_k)
+
         best_reward = top_k[0][1]
         
         data = get_training_data(top_k, HYPERPARAMETERS['N'], device)
