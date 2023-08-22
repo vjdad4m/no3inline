@@ -88,7 +88,7 @@ def train(HYPERPARAMETERS):
 
     rollouts = []
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
-    for _ in tq:
+    for i in tq:
         rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
                          for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
         rollouts.sort(key=lambda x: x[1])
@@ -102,8 +102,8 @@ def train(HYPERPARAMETERS):
         wandb.log({'loss': np.mean(losses), 'best_reward': best_reward})
         
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
-
-        visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']))
+        if i % 10 == 0:
+            visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
 
         rollouts = rollouts[:HYPERPARAMETERS['N'] * HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
@@ -127,9 +127,9 @@ def main():
             #################################################################    
 
         'LEARNING_RATE': 0.001,
-        'N_ROLLOUTS': 20,
-        'N_EPOCHS': 5,
-        'N_ITER': 10,
+        'N_ROLLOUTS': 100,
+        'N_EPOCHS': 100,
+        'N_ITER': 100,
         'TOP_K_PERCENT': 0.05,
         'REWARD_TYPE': 'summed', # 'summed' or 'laststate'
     }
