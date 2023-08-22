@@ -12,7 +12,7 @@ HYPERPARAMETERS = {
 
     'LEARNING_RATE': 0.001,
     'N_ROLLOUTS': 100,
-    'N_EPOCHS': 100,
+    'N_EPOCHS': 200,
     'N_ITER': 100,
     'TOP_K_PERCENT': 0.05,
     'REWARD_TYPE': 'summed', # 'summed' or 'laststate'

@@ -134,8 +134,8 @@ def train(HYPERPARAMETERS):
         
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
         if i % 10 == 0:
-            fig=visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
-            wandb.log({f"gen{i}":wandb.Image(plt)})
+            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
+            wandb.log({"best_rollout": wandb.Image(plt)})
             
 
 
