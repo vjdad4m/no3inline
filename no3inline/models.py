@@ -1,10 +1,5 @@
 import torch
 import torch.nn as nn
-!pip3 install torchvision
-import torchvision.models as models
-
-
-
 
 class ResnetBlock(nn.Module):
     def __init__(self):
@@ -43,42 +38,6 @@ class ResNet18(nn.Module):
         x = self.layer1(x)
         return x
     
-
-
-class ResnetBlock(nn.Module):
-    def __init__(self):
-        super(ResnetBlock, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, 3, 1, 1)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
-
-    def forward(self, x):
-        out = self.relu(self.bn1(self.conv1(x)))
-        out = self.conv2(out)
-        out += x
-        return out
-
-class ResNet18(nn.Module):
-    def __init__(self):
-        super(ResNet18, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)
-        self.relu = nn.ReLU(inplace=True)
-        self.hidden_layers = self._make_hidden_layers(64, 3)
-
-    def _make_hidden_layers(self, in_channels):
-        layers = []
-        for _ in range(3):
-            layers.append(ResnetBlock(in_channels))
-        return nn.Sequential(*layers)
-
-    def forward(self, x):
-        x = self.relu(self.bn1(self.conv1(x)))
-        x = self.hidden_layers(x)
-        return x
-
-    
 class Generator(nn.Module):
     def __init__(self):
         super(Generator, self).__init__()
@@ -97,5 +56,3 @@ class Generator(nn.Module):
         x = self.dropout(x)
         x = self.linear1(x)
         return torch.softmax(x, dim=-1)
-    
-

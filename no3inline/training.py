@@ -34,7 +34,7 @@ def calculate_rewards_per_state(state_list, N, reward_type):
     if reward_type == 'summed':
         rewards = []
         for state in state_list:
-            reward = no3inline.calculate_reward(state.view(N, N))
+            reward += no3inline.calculate_reward(state.view(N, N))
         rewards.append(reward)
         reward = np.sum(rewards)
     elif reward_type == 'laststate':
