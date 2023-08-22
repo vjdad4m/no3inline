@@ -1,13 +1,16 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 import tqdm
+import visualize
+from config import HYPERPARAMETERS
+
 import no3inline
 import wandb
-import visualize
-import matplotlib.pyplot as plt
-from config import HYPERPARAMETERS
+
+
 class Generator(nn.Module):
     def __init__(self, N):
         super(Generator, self).__init__()
@@ -139,7 +142,7 @@ def train(HYPERPARAMETERS):
             
 
 
-        rollouts = rollouts[:HYPERPARAMETERS['N'] * HYPERPARAMETERS['N_ROLLOUTS'] * 4]
+        rollouts = rollouts[:HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
 
     return model
