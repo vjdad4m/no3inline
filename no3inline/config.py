@@ -1,5 +1,5 @@
 HYPERPARAMETERS = {
-    'RUN_NAME': 'test_N=10',
+    'RUN_NAME': 'test_N=6',
     'N': 6,
         #################################################################
         # interesting values of N

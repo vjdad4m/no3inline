@@ -27,8 +27,9 @@ def visualize_grid(grid, filename=None):
     ax.set_yticklabels(range(n))
     if filename is not None:
         plt.savefig(filename, dpi=200)
+        return fig
     else:
-        plt.show()
+        plt.show
 
 def main():
     grid = [

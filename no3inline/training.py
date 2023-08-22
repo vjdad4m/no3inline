@@ -6,6 +6,7 @@ import tqdm
 import no3inline
 import wandb
 import visualize
+import matplotlib.pyplot as plt
 from config import HYPERPARAMETERS
 class Generator(nn.Module):
     def __init__(self, N):
@@ -133,7 +134,10 @@ def train(HYPERPARAMETERS):
         
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
         if i % 10 == 0:
-            visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
+            fig=visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
+            wandb.log({f"gen{i}":wandb.Image(plt)})
+            
+
 
         rollouts = rollouts[:HYPERPARAMETERS['N'] * HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
