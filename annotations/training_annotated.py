@@ -1,3 +1,5 @@
+from typing import List, Tuple, Union
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -13,7 +15,7 @@ import wandb
 
 # Define the neural network (Generator) that acts as the policy in reinforcement learning
 class Generator(nn.Module):
-    def __init__(self, N):
+    def __init__(self, N: int):
         super(Generator, self).__init__()
         # Convolutional layers
         self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
@@ -26,7 +28,7 @@ class Generator(nn.Module):
         self.dropout = nn.Dropout(0.2)
 
     # Forward pass of the neural network
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Applying convolutional layers with ReLU activation functions
         x = torch.relu(self.conv1(x))
         x = torch.relu(self.conv2(x))
@@ -36,7 +38,7 @@ class Generator(nn.Module):
         x = self.linear1(x)
         return torch.softmax(x, dim=-1)  # Softmax for probability distribution
 
-def calculate_rewards_per_state(state_list, N, reward_type):
+def calculate_rewards_per_state(state_list: List[torch.Tensor], N: int, reward_type: str) -> float:
     # Check the type of reward calculation requested
     if reward_type == 'summed':
         # Initialize an empty list to store rewards
@@ -59,7 +61,7 @@ def calculate_rewards_per_state(state_list, N, reward_type):
     # Return the final calculated reward
     return reward
 
-def generate_rollout(model, N, device, reward_type):
+def generate_rollout(model, N: int, device: str, reward_type: str) -> Tuple[List[torch.Tensor], float]:
     # Initialize a list of states starting with an all-zero tensor of size (N * N)
     states = [torch.zeros((N * N)).float()]
 
@@ -95,7 +97,7 @@ def generate_rollout(model, N, device, reward_type):
     # Return the list of states and the total rewards
     return states, np.sum(rewards)
 
-def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
+def generate_batched_rollout(model, N: int, BATCH_SIZE: int, device: str, reward_type: str) -> List[Tuple[torch.Tensor, float]]:
     # Initialize a list of states for each batch, starting with a tensor of zeros of size (BATCH_SIZE, N * N)
     states = [torch.zeros((BATCH_SIZE, N * N)).float()]
 
@@ -139,7 +141,7 @@ def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
     # Return the rollouts paired with their associated rewards
     return list(zip(rollouts, rewards))
 
-def tensor_from_rollout(rollout, N):
+def tensor_from_rollout(rollout: torch.Tensor, N: int) -> torch.Tensor:
     # Reshape the rollout tensor to have dimensions (length of rollout, N, N)
     stack = rollout.view(len(rollout), N, N)
 
@@ -156,7 +158,7 @@ def tensor_from_rollout(rollout, N):
     # Return the tensor containing pairs of 'current' and 'next' states
     return tensor_list
 
-def get_training_data(top_k, N, device):
+def get_training_data(top_k: List[Tuple[torch.Tensor, float]], N: int, device: str) -> List[torch.Tensor]:
     # For each rollout in the top performing rollouts (top_k),
     # - Convert the rollout to the tensor format capturing pairs of consecutive states using tensor_from_rollout function
     # - Move the resulting tensor to the specified device (CPU or CUDA)
@@ -165,7 +167,7 @@ def get_training_data(top_k, N, device):
         for rollout in top_k
     ]
 
-def train_epoch(data, model, criterion, optimizer, N):
+def train_epoch(data: List[Tuple[torch.Tensor, torch.Tensor]], model, criterion: nn.Module, optimizer: torch.optim.Optimizer, N: int) -> float:
     # Initialize a list to store the loss values for each batch in the epoch
     epoch_loss = []
 
@@ -194,7 +196,7 @@ def train_epoch(data, model, criterion, optimizer, N):
     # Return the average loss for the entire epoch
     return np.mean(epoch_loss)
 
-def train(HYPERPARAMETERS):
+def train(HYPERPARAMETERS: dict):
     # Decide the computation device based on GPU availability
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'{device = }')
