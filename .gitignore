@@ -1,9 +1,15 @@
+# Python artifacts
 *.egg-info
 __pycache__/
 /build
-wrapper.c
 *.pyd
 *.so
+wrapper.c
+
+# Development environment directories
 .vs/
 .vscode/
+
+# Machine learning tracking
 wandb/
+mlruns/

@@ -5,31 +5,10 @@ import numpy as np
 import tqdm
 import no3inline
 import wandb
-
-wandb.init(project="no3line", entity="conjecture-team")
-
-N = 51
-
-""" HYPERPARAMETERS """
-LEARNING_RATE = 0.01
-N_ROLLOUTS = 100
-N_EPOCHS = 1000
-N_ITER = 100
-TOP_K_PERCENT = 0.05
-
-HYPERPARAMETERS = {
-    'num_points': N,
-    'learning_rate': LEARNING_RATE,
-    'n_rollouts': N_ROLLOUTS,
-    'n_epochs': N_EPOCHS,
-    'n_iter': N_ITER,
-    'top_k_percent': TOP_K_PERCENT
-}
-
-wandb.config.update(HYPERPARAMETERS)
+import visualize
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, N):
         super(Generator, self).__init__()
         self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -47,23 +26,23 @@ class Generator(nn.Module):
         x = self.linear1(x)
         return torch.softmax(x, dim=-1)
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f'{device = }')
-
-model = Generator().to(device)
-optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-criterion = nn.CrossEntropyLoss()
-
-def calculate_reward(state_list):
-    state = state_list[-1].reshape(N, N)
-    reward = no3inline.calculate_reward(state)
+def calculate_rewards_per_state(state_list, N, reward_type):
+    if reward_type == 'summed':
+        rewards = []
+        for state in state_list:
+            reward = no3inline.calculate_reward(state.view(N, N))
+        rewards.append(reward)
+        reward = np.sum(rewards)
+    elif reward_type == 'laststate':
+        state = state_list[-1]
+        reward = no3inline.calculate_reward(state.view(N, N))
     return reward
 
-def generate_rollout(model, N, device):
+def generate_rollout(model, N, device, reward_type):
     states = [torch.zeros((N * N)).float()]
     
     for _ in range(2 * N):
-        next_state_probabilities = model(states[-1].reshape((1, N, N)).to(device)).cpu().detach()[0]
+        next_state_probabilities = model(states[-1].view((1, N, N)).to(device)).cpu().detach()[0]
         next_state_probabilities[states[-1] == 1.0] = float('-inf')
         next_state_probabilities = torch.softmax(torch.flatten(next_state_probabilities), dim=-1)
         
@@ -72,8 +51,15 @@ def generate_rollout(model, N, device):
         new_state[action] = 1
         
         states.append(new_state)
-    reward = calculate_reward(states)
-    return states, reward
+    rewards = calculate_rewards_per_state(states, N, reward_type)
+    return states, np.sum(rewards)
+
+def tensor_from_rollout(rollout, N):
+    stack = torch.stack(rollout).view((len(rollout), N, N))
+    tensor_list = torch.zeros((2, len(rollout) - 1, N, N))
+    tensor_list[0] = stack[:-1]
+    tensor_list[1] = stack[1:]
+    return tensor_list
 
 def get_training_data(top_k, N, device):
     return [
@@ -81,42 +67,83 @@ def get_training_data(top_k, N, device):
         for rollout in top_k
     ]
 
-def tensor_from_rollout(rollout, N):
-    stack = torch.stack(rollout).reshape((len(rollout), N, N))
-    tensor_list = torch.zeros((2, len(rollout) - 1, N, N))
-    tensor_list[0] = stack[:-1]
-    tensor_list[1] = stack[1:]
-    return tensor_list
-
 def train_epoch(data, model, criterion, optimizer, N):
     epoch_loss = []
     for X, y in data:
         optimizer.zero_grad()
-        output = model(X.reshape((2 * N, 1, N, N))).reshape((2 * N, N, N))
+        output = model(X.view((2 * N, 1, N, N))).view((2 * N, N, N))
         loss = criterion(output, y)
         loss.backward()
         optimizer.step()
         epoch_loss.append(loss.item())
     return np.mean(epoch_loss)
 
-rollouts = []
-tq = tqdm.trange(N_EPOCHS)
-for _ in tq:
-    rollouts.extend([generate_rollout(model, N, device) for _ in range(N_ROLLOUTS)])
-    rollouts.sort(key=lambda x: x[1])
-    
-    top_k = rollouts[:int(N_ROLLOUTS * TOP_K_PERCENT)]
-    best_reward = top_k[0][1]
-    
-    data = get_training_data(top_k, N, device)
-    losses = [train_epoch(data, model, criterion, optimizer, N) for _ in range(N_ITER)]
+def train(HYPERPARAMETERS):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f'{device = }')
 
-    wandb.log({'loss': np.mean(losses), 'best_reward': best_reward})
-    
-    tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
+    model = Generator(HYPERPARAMETERS['N']).to(device)
+    optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
+    criterion = nn.CrossEntropyLoss()
 
-    rollouts = rollouts[:N_ROLLOUTS * 4]
+    rollouts = []
+    tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
+    for _ in tq:
+        rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
+                         for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
+        rollouts.sort(key=lambda x: x[1])
+        
+        top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * HYPERPARAMETERS['TOP_K_PERCENT'])]
+        best_reward = top_k[0][1]
+        
+        data = get_training_data(top_k, HYPERPARAMETERS['N'], device)
+        losses = [train_epoch(data, model, criterion, optimizer, HYPERPARAMETERS['N']) for _ in range(HYPERPARAMETERS['N_ITER'])]
 
-wandb.log_artifact(model)
+        wandb.log({'loss': np.mean(losses), 'best_reward': best_reward})
+        
+        tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
 
-wandb.finish()
+        visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']))
+
+        rollouts = rollouts[:HYPERPARAMETERS['N'] * HYPERPARAMETERS['N_ROLLOUTS'] * 4]
+
+
+    return model
+
+
+def main():
+    wandb.init(project="6x6", entity="conjecture-team")
+
+    HYPERPARAMETERS = {
+        'RUN_NAME': 'test_N=10',
+        'N': 6,
+            #################################################################
+            # interesting values of N
+            # 1. 10-16 : can we find solution? we can verify as all are known
+            # 2. 17-18 : unpublished solutions may exist
+            # 3. 19-46 : not all solutions are known
+            # 4. 48-50-52 : a single solution is known
+            # 5. 47-49-51-52< : no solution is known
+            #################################################################    
+
+        'LEARNING_RATE': 0.001,
+        'N_ROLLOUTS': 20,
+        'N_EPOCHS': 5,
+        'N_ITER': 10,
+        'TOP_K_PERCENT': 0.05,
+        'REWARD_TYPE': 'summed', # 'summed' or 'laststate'
+    }
+
+    runname = HYPERPARAMETERS['RUN_NAME'] if HYPERPARAMETERS['RUN_NAME'] is not None else "-".join(wandb.run.name.split("-")[:-1])
+    wandb.run.name = wandb.run.name.split("-")[-1] + "-" + runname 
+    wandb.run.save()
+
+    wandb.config.update(HYPERPARAMETERS)
+
+    trained_model = train(HYPERPARAMETERS)
+
+    wandb.finish()
+
+
+if __name__ == '__main__':
+    main()
