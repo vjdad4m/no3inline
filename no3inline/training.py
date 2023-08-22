@@ -54,8 +54,29 @@ def generate_rollout(model, N, device, reward_type):
     rewards = calculate_rewards_per_state(states, N, reward_type)
     return states, np.sum(rewards)
 
+def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
+    states = [torch.zeros((BATCH_SIZE, N * N)).float()]
+
+    for _ in range(2 * N):
+        next_state_probabilities = model(states[-1].reshape((BATCH_SIZE, 1, N, N)).to(device)).cpu().detach()
+        mask = states[-1] == 1.0
+
+        next_state_probabilities[mask] = float('-inf')
+        next_state_probabilities = torch.softmax(next_state_probabilities, dim=1)
+        action = torch.multinomial(next_state_probabilities, num_samples=1).squeeze()
+        new_state = states[-1].clone()
+        new_state[torch.arange(BATCH_SIZE), action] = 1
+        states.append(new_state)
+
+    rollouts = torch.stack(states).reshape((2 * N + 1, BATCH_SIZE, N * N))
+    rollouts = rollouts.permute((1, 0, 2))
+
+    rewards = [calculate_rewards_per_state(rollout, N, reward_type) for rollout in rollouts]
+    
+    return list(zip(rollouts, rewards))
+
 def tensor_from_rollout(rollout, N):
-    stack = torch.stack(rollout).view((len(rollout), N, N))
+    stack = rollout.view(len(rollout), N, N)
     tensor_list = torch.zeros((2, len(rollout) - 1, N, N))
     tensor_list[0] = stack[:-1]
     tensor_list[1] = stack[1:]
@@ -88,7 +109,7 @@ def train(HYPERPARAMETERS):
 
     rollouts = []
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
-    for i in tq:
+    for _ in tq:
         rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
                          for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
         rollouts.sort(key=lambda x: x[1])
@@ -112,11 +133,11 @@ def train(HYPERPARAMETERS):
 
 
 def main():
-    wandb.init(project="6x6", entity="conjecture-team")
+    wandb.init(project="testing", entity="conjecture-team")
 
     HYPERPARAMETERS = {
-        'RUN_NAME': 'test_N=10',
-        'N': 6,
+        'RUN_NAME': 'test_N=10 - batched',
+        'N': 10,
             #################################################################
             # interesting values of N
             # 1. 10-16 : can we find solution? we can verify as all are known
