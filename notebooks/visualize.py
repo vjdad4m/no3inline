@@ -28,10 +28,14 @@ def visualize_grid(grid):
 
     plt.show()
 
-grid = [
-    [1, 1, 0],
-    [1, 1, 1],
-    [0, 1, 1]
-]
+def main():
+    grid = [
+        [1, 1, 0],
+        [1, 1, 1],
+        [0, 1, 1]
+    ]
 
-visualize_grid(grid)
+    visualize_grid(grid)
+
+if __name__ == "__main__":
+    main()
