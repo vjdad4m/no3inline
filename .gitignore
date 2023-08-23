@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 *.so
 wrapper.c
+cpp_wrapper.cpp
 
 # Development environment directories
 .vs/
