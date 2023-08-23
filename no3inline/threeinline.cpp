@@ -43,9 +43,16 @@ Line getLine(const pont& p1, const pont& p2) {
     Line l;
     l.a = p2.y - p1.y;
     l.b = p1.x - p2.x;
-    l.c = l.a * p1.x + l.b * p1.y;
+    l.c = -(l.a * p1.x + l.b * p1.y);
     l.normalize();
     return l;
+}
+void writeLines(const set<Line> &lines) {
+    ofstream out("lines.txt");
+    for (const Line &line : lines) {
+        out << line.a << " " << line.b << " " << line.c << "\n";
+    }
+    out.close();
 }
 
 int solve(ifstream &in) {
@@ -57,12 +64,19 @@ int solve(ifstream &in) {
     }
     
     set<Line> lines;
+    set<Line> dupLines;
     for (int i = 0; i < 2 * n; i++) {
         for (int j = i + 1; j < 2 * n; j++) {
-            lines.insert(getLine(p[i], p[j]));
+            Line theLine=getLine(p[i], p[j]);
+            if(lines.find(theLine)!=lines.end()){
+                dupLines.insert(theLine);
+            }
+            else{
+                lines.insert(theLine);
+            }
         }
     }
-
+    writeLines(dupLines);
     return (2*n)*(2*n-1)/2-lines.size();
 }
 
