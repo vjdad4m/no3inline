@@ -9,6 +9,7 @@
 
 HYPERPARAMETERS = {
     'RUN_NAME': 'test_N=6',
+    'PROJECT': 'testing',
     'N': 6,
     'MODEL': 'convnet', # 'convnet' or 'resnet'
     'LEARNING_RATE': 0.001,
