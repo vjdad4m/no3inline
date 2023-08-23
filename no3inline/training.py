@@ -8,35 +8,15 @@ import visualize
 from config import HYPERPARAMETERS
 
 import no3inline
+import no3inline.models
 import wandb
 
 
-class Generator(nn.Module):
-    def __init__(self, N):
-        super(Generator, self).__init__()
-        self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
-        self.flatten = nn.Flatten()
-        self.linear1 = nn.Linear(N * N, N * N)
-        self.dropout = nn.Dropout(0.2)
-
-    def forward(self, x):
-        x = torch.relu(self.conv1(x))
-        x = torch.relu(self.conv2(x))
-        x = torch.relu(self.conv3(x))
-        x = self.flatten(x)
-        x = self.dropout(x)
-        x = self.linear1(x)
-        return torch.softmax(x, dim=-1)
-
 def calculate_rewards_per_state(state_list, N, reward_type):
     if reward_type == 'summed':
-        rewards = []
+        reward = 0
         for state in state_list:
             reward += no3inline.calculate_reward(state.view(N, N))
-        rewards.append(reward)
-        reward = np.sum(rewards)
     elif reward_type == 'laststate':
         state = state_list[-1]
         reward = no3inline.calculate_reward(state.view(N, N))
@@ -56,7 +36,7 @@ def generate_rollout(model, N, device, reward_type):
         
         states.append(new_state)
     rewards = calculate_rewards_per_state(states, N, reward_type)
-    return states, np.sum(rewards)
+    return states, rewards
 
 def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
     states = [torch.zeros((BATCH_SIZE, N * N)).float()]
@@ -97,7 +77,7 @@ def train_epoch(data, model, criterion, optimizer, N):
     for X, y in data:
         optimizer.zero_grad()
         output = model(X.view((2 * N, 1, N, N))).view((2 * N, N, N))
-        loss = criterion(output, y)
+        loss = criterion(output, y - X)
         loss.backward()
         optimizer.step()
         epoch_loss.append(loss.item())
@@ -107,7 +87,7 @@ def train(HYPERPARAMETERS):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'{device = }')
 
-    model = Generator(HYPERPARAMETERS['N']).to(device)
+    model = no3inline.models.Generator(HYPERPARAMETERS['N']).to(device)
     optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
     criterion = nn.CrossEntropyLoss()
 

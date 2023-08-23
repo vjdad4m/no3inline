@@ -39,7 +39,7 @@ class ResNet18(nn.Module):
         return x
     
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, N: int):
         super(Generator, self).__init__()
         self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
@@ -55,4 +55,5 @@ class Generator(nn.Module):
         x = self.flatten(x)
         x = self.dropout(x)
         x = self.linear1(x)
-        return torch.softmax(x, dim=-1)
+        
+        return x
