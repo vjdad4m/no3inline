@@ -52,7 +52,7 @@ void writeLines(const set<Line> &lines) {
     out.close();
 }
 
-int solve(int n, vector<pont> &p(2 * n);) {
+int solve(int &n, vector<pont> &p) {
     
     set<Line> lines;
     set<Line> dupLines;
@@ -72,6 +72,6 @@ int solve(int n, vector<pont> &p(2 * n);) {
 }
 
 int main() {
-    cout << "Distinct lines: " << solve(in) << "\n";
+    cout << "Distinct lines: " << solve() << "\n";
     return 0;
 }
