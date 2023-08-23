@@ -73,7 +73,7 @@ def train(HYPERPARAMETERS):
     optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
     criterion = nn.CrossEntropyLoss()
 
-    print(f'Number of parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
+    print(f'Number of trainable parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
 
     rollouts = []
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
