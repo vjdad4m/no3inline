@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def visualize_grid(grid):
+def visualize_grid(grid, filename=None):
     grid = np.array(grid)
     n, m = grid.shape
 
@@ -25,8 +25,11 @@ def visualize_grid(grid):
     ax.spines['top'].set_color('none')
 
     ax.set_yticklabels(range(n))
-
-    plt.show()
+    if filename is not None:
+        plt.savefig(filename, dpi=200)
+        return fig
+    else:
+        plt.show
 
 def main():
     grid = [
