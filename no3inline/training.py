@@ -73,8 +73,8 @@ def train_epoch(data, model, criterion, optimizer, N):
     epoch_loss = []
     for X, y in data:
         optimizer.zero_grad()
-        output = model(X.view((2 * N, 1, N, N))).view((2 * N, N, N))
-        loss = criterion(output, y - X)
+        output = model(X.view((2 * N, 1, N, N)))
+        loss = criterion(output, torch.where((y != X).flatten(1))[1])
         loss.backward()
         optimizer.step()
         epoch_loss.append(loss.item())
