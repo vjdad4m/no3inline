@@ -69,7 +69,14 @@ def train(HYPERPARAMETERS):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'{device = }')
 
-    model = no3inline.models.MaskedLogitNetwork(no3inline.models.ResNet18()).to(device)
+    if HYPERPARAMETERS['MODEL'] == 'convnet':
+        inner_model = no3inline.models.ConvNet(HYPERPARAMETERS['N'])
+    elif HYPERPARAMETERS['MODEL'] == 'resenet':
+        inner_model = no3inline.models.ResNet18()
+    else: # default
+        inner_model = no3inline.models.ConvNet(HYPERPARAMETERS['N'])
+
+    model = no3inline.models.MaskedLogitNetwork(inner_model).to(device)
     optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
     criterion = nn.CrossEntropyLoss()
 

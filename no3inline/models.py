@@ -65,9 +65,9 @@ class ResNet18(nn.Module):
         x = self.flatten(x)
         return x
     
-class Generator(nn.Module):
+class ConvNet(nn.Module):
     def __init__(self, N: int):
-        super(Generator, self).__init__()
+        super(ConvNet, self).__init__()
         self.conv1 = PaddedConv2d(1 , 64, kernel_size=3)
         self.conv2 = PaddedConv2d(64, 64, kernel_size=3)
         self.conv3 = PaddedConv2d(64, 1, kernel_size=3)
