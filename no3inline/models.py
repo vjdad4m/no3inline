@@ -48,7 +48,7 @@ class Generator(nn.Module):
         self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
-	    x = F.pad(x, (-1, -1, -1, -1), value=-1)
+	x = F.pad(x, (-1, -1, -1, -1), value=-1)
         x = torch.relu(self.conv1(x))
         x = torch.relu(self.conv2(x))
         x = torch.relu(self.conv3(x))
