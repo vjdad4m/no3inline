@@ -50,6 +50,7 @@ class ResNet18(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.hidden_layers = self._make_hidden_layers()
         self.final = PaddedConv2d(64, 1, kernel_size=3)
+        self.flatten = nn.Flatten()
 
     def _make_hidden_layers(self):
         layers = []
@@ -61,6 +62,7 @@ class ResNet18(nn.Module):
         x = self.relu(self.bn1(self.conv1(x)))
         x = self.hidden_layers(x)
         x = self.final(x)
+        x = self.flatten(x)
         return x
     
 class Generator(nn.Module):

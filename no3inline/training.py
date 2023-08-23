@@ -28,9 +28,6 @@ def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
 
     for _ in range(2 * N):
         next_state_probabilities = model(states[-1].reshape((BATCH_SIZE, 1, N, N)).to(device)).cpu().detach()
-        mask = states[-1] == 1.0
-
-        next_state_probabilities[mask] = float('-inf')
         next_state_probabilities = torch.softmax(next_state_probabilities, dim=1)
         action = torch.multinomial(next_state_probabilities, num_samples=1).squeeze()
         new_state = states[-1].clone()
@@ -72,9 +69,11 @@ def train(HYPERPARAMETERS):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'{device = }')
 
-    model = no3inline.models.Generator(HYPERPARAMETERS['N']).to(device)
+    model = no3inline.models.MaskedLogitNetwork(no3inline.models.ResNet18()).to(device)
     optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
     criterion = nn.CrossEntropyLoss()
+
+    print(f'Number of parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
 
     rollouts = []
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
@@ -115,7 +114,6 @@ def train(HYPERPARAMETERS):
             fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
             wandb.log({"best_rollout": wandb.Image(plt)})
             
-
 
         rollouts = rollouts[:HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
