@@ -15,5 +15,6 @@ HYPERPARAMETERS = {
     'N_EPOCHS': 200,
     'N_ITER': 100,
     'TOP_K_PERCENT': 0.05,
-    'REWARD_TYPE': 'laststate', # 'summed' or 'laststate'
+    'REWARD_TYPE': 'laststate', # 'summed' or 'laststate',
+    'DEDUPLICATION': True
 }
