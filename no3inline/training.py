@@ -23,22 +23,6 @@ def calculate_rewards_per_state(state_list, N, reward_type):
         reward = no3inline.calculate_reward(state.view(N, N))
     return reward
 
-def generate_rollout(model, N, device, reward_type):
-    states = [torch.zeros((N * N)).float()]
-    
-    for _ in range(2 * N):
-        next_state_probabilities = model(states[-1].view((1, N, N)).to(device)).cpu().detach()[0]
-        next_state_probabilities[states[-1] == 1.0] = float('-inf')
-        next_state_probabilities = torch.softmax(torch.flatten(next_state_probabilities), dim=-1)
-        
-        action = torch.multinomial(next_state_probabilities, num_samples=1).item()
-        new_state = states[-1].clone()
-        new_state[action] = 1
-        
-        states.append(new_state)
-    rewards = calculate_rewards_per_state(states, N, reward_type)
-    return states, rewards
-
 def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
     states = [torch.zeros((BATCH_SIZE, N * N)).float()]
 
@@ -105,14 +89,8 @@ def train(HYPERPARAMETERS):
         return 1
 
     for i in tq:
-        # - Simple rollout generation
-        # rollouts.extend([generate_rollout(model, HYPERPARAMETERS['N'], device, HYPERPARAMETERS['REWARD_TYPE']) 
-        #                 for _ in range(HYPERPARAMETERS['N_ROLLOUTS'])])
-
-        # - Batched rollout generation
         rollouts.extend(generate_batched_rollout(model, HYPERPARAMETERS['N'], HYPERPARAMETERS['N_ROLLOUTS'], device, HYPERPARAMETERS['REWARD_TYPE']))
     
-
         rollouts.sort(key = cmp_to_key(reward_sort))
 
         if HYPERPARAMETERS['DEDUPLICATION']:
@@ -124,9 +102,6 @@ def train(HYPERPARAMETERS):
             rollouts = alt_rollouts
         
         top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * min(len(rollouts), HYPERPARAMETERS['TOP_K_PERCENT']))]
-        
-        # Uncomment if using simple rollout generation
-        # top_k = torch.stack(top_k)
 
         best_reward = top_k[0][1]
         
