@@ -2,6 +2,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class MaskedLogitNetwork(nn.Module):
+    def __init__(self, logit_model):
+        super(MaskedLogitNetwork, self).__init__()
+
+        # Initialize mask and apply it to the weights
+        self.logit_model = logit_model
+
+    def forward(self, x):
+        unmasked_logits = self.logit_model(x)
+        return (unmasked_logits - torch.exp(1000*x.flatten(1)))
+
 class ResnetBlock(nn.Module):
     def __init__(self):
         super(ResnetBlock, self).__init__()
