@@ -2,6 +2,22 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class PaddedConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, pad_value=-1):
+        super(PaddedConv2d, self).__init__()
+        self.padding = (kernel_size - 1) // 2
+        self.pad_value = pad_value
+        self.conv = nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            padding=0,
+        )
+    
+    def forward(self, x):
+        x = F.pad(x, [self.padding] * 4, value=self.pad_value)
+        return self.conv(x)
+
 class MaskedLogitNetwork(nn.Module):
     def __init__(self, logit_model):
         super(MaskedLogitNetwork, self).__init__()
@@ -49,9 +65,9 @@ class ResNet18(nn.Module):
 class Generator(nn.Module):
     def __init__(self, N: int):
         super(Generator, self).__init__()
-        self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
+        self.conv1 = PaddedConv2d(1 , 64, kernel_size=3)
+        self.conv2 = PaddedConv2d(64, 64, kernel_size=3)
+        self.conv3 = PaddedConv2d(64, 1, kernel_size=3)
         self.flatten = nn.Flatten()
         self.linear1 = nn.Linear(N * N, N * N)
         self.dropout = nn.Dropout(0.2)
