@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def visualize_grid(grid, lines):
+def visualize_grid(grid, lines = []):
     grid = np.array(grid)
     n, m = grid.shape
 
