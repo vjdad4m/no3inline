@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 
 class ResnetBlock(nn.Module):
@@ -38,20 +38,21 @@ class ResNet18(nn.Module):
 
     
 class Generator(nn.Module):
-    def __init__(self, N: int):
+    def __init__(self, N):
         super(Generator, self).__init__()
-        self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 1, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(1 , 64, kernel_size=3, padding=0)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=0)
+        self.conv3 = nn.Conv2d(64, 1, kernel_size=3, padding=0)
         self.flatten = nn.Flatten()
         self.linear1 = nn.Linear(N * N, N * N)
         self.dropout = nn.Dropout(0.2)
 
     def forward(self, x):
+	    x = F.pad(x, (-1, -1, -1, -1), value=-1)
         x = torch.relu(self.conv1(x))
         x = torch.relu(self.conv2(x))
         x = torch.relu(self.conv3(x))
         x = self.flatten(x)
         x = self.dropout(x)
         x = self.linear1(x)
-        return x
+        return torch.softmax(x, dim=-1)
