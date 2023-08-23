@@ -55,4 +55,4 @@ class Generator(nn.Module):
         x = self.flatten(x)
         x = self.dropout(x)
         x = self.linear1(x)
-        return torch.tensor(x, dim=-1)
+        return x
