@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+
+
 class ResnetBlock(nn.Module):
     def __init__(self):
         super(ResnetBlock, self).__init__()
@@ -10,33 +12,30 @@ class ResnetBlock(nn.Module):
         self.conv2 = nn.Conv2d(64, 64, 3, 1, 1)
 
     def forward(self, x):
-        residual = x
         out = self.relu(self.bn1(self.conv1(x)))
         out = self.conv2(out)
-        out += residual
+        out += x
         return out
 
 class ResNet18(nn.Module):
     def __init__(self):
         super(ResNet18, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-
-        self.layer1 = self._make_layer(64, 2)
-
-    def _make_layer(self, in_channels, blocks):
+        self.hidden_layers = self._make_hidden_layers(64)
+        
+    def _make_hidden_layers(self):
         layers = []
-        for _ in range(blocks):
-            layers.append(ResnetBlock(in_channels))
+        for _ in range(3):
+            layers.append(ResnetBlock())
         return nn.Sequential(*layers)
 
     def forward(self, x):
         x = self.relu(self.bn1(self.conv1(x)))
-        x = self.maxpool(x)
-        x = self.layer1(x)
+        x = self.hidden_layers(x)
         return x
+
     
 class Generator(nn.Module):
     def __init__(self):
@@ -56,3 +55,5 @@ class Generator(nn.Module):
         x = self.dropout(x)
         x = self.linear1(x)
         return torch.softmax(x, dim=-1)
+    
+
