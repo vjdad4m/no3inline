@@ -8,9 +8,6 @@ using namespace std;
 
 struct pont {
     long long x, y;
-    void read(ifstream &in) {
-        in >> x >> y;
-    }
     pont operator - (const pont& a) const {
         return pont{x - a.x, y - a.y};
     }
@@ -55,13 +52,7 @@ void writeLines(const set<Line> &lines) {
     out.close();
 }
 
-int solve(ifstream &in) {
-    int n;
-    in >> n;
-    vector<pont> p(2 * n);
-    for (int i = 0; i < 2 * n; i++) {
-        p[i].read(in);
-    }
+int solve(int n, vector<pont> &p(2 * n);) {
     
     set<Line> lines;
     set<Line> dupLines;
@@ -81,14 +72,6 @@ int solve(ifstream &in) {
 }
 
 int main() {
-    ifstream in("ex.txt"); // Open file for reading
-    if (!in.is_open()) {
-        cerr << "Error opening file ex.txt\n";
-        return 1; // Return error code 1 if file cannot be opened
-    }
     cout << "Distinct lines: " << solve(in) << "\n";
-    
-    in.close(); // Close the file
-
     return 0;
 }

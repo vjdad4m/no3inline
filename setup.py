@@ -25,6 +25,8 @@ if (args.with_cuda or torch.cuda.is_available()) and not args.no_cuda:
 
 ext_modules_list.extend(cythonize("no3inline/wrapper.pyx"))
 
+ext_modules_list.extend(cythonize("no3inline/cpp_wrapper.pyx"))
+
 setup(
     name="no3inline",
     packages=["no3inline"],
