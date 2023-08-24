@@ -130,10 +130,16 @@ def train(HYPERPARAMETERS):
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
         if best_reward < previous_best_reward:
             previous_best_reward = best_reward
-            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
+            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/N_{HYPERPARAMETERS["N"]}_R_{best_reward}_gen_{i}')
             wandb.log({"best_rollout": wandb.Image(plt)})
             plt.close(fig)
-            
+
+        if best_reward == 0:
+            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/solution/solution_{i}')
+            print("Solution found!")
+            wandb.log({"solution": wandb.Image(plt)})
+            plt.close(fig)
+            break
 
         rollouts = rollouts[:HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
