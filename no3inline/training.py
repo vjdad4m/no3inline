@@ -102,9 +102,9 @@ def train(HYPERPARAMETERS):
         if HYPERPARAMETERS['DEDUPLICATION']:
             alt_rollouts = []
             alt_rollouts.append(rollouts[0])
-            for i in range(1, len(rollouts)):
-                if not torch.allclose(rollouts[i-1][0][-1], rollouts[i][0][-1]):
-                    alt_rollouts.append(rollouts[i])
+            for index in range(1, len(rollouts)):
+                if not torch.allclose(rollouts[index-1][0][-1], rollouts[index][0][-1]):
+                    alt_rollouts.append(rollouts[index])
             rollouts = alt_rollouts
         
         top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * min(len(rollouts), HYPERPARAMETERS['TOP_K_PERCENT']))]
@@ -120,6 +120,7 @@ def train(HYPERPARAMETERS):
         if i % 10 == 0:
             fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
             wandb.log({"best_rollout": wandb.Image(plt)})
+            plt.close(fig)
             
 
         rollouts = rollouts[:HYPERPARAMETERS['N_ROLLOUTS'] * 4]
