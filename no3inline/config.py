@@ -17,6 +17,7 @@ HYPERPARAMETERS = {
     'N_EPOCHS': 200,
     'N_ITER': 100,
     'TOP_K_PERCENT': 0.05,
+    'EPSILON': 0.1, # probability of random action
     'REWARD_TYPE': 'laststate', # 'summed' or 'laststate',
     'DEDUPLICATION': True
 }
