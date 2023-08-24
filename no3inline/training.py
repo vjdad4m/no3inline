@@ -130,7 +130,7 @@ def train(HYPERPARAMETERS):
 
 
 def main():
-    wandb.init(project="testing", entity="conjecture-team")
+    wandb.init(project=HYPERPARAMETERS["PROJECT"], entity="conjecture-team")
 
     runname = HYPERPARAMETERS['RUN_NAME'] if HYPERPARAMETERS['RUN_NAME'] is not None else "-".join(wandb.run.name.split("-")[:-1])
     wandb.run.name = wandb.run.name.split("-")[-1] + "-" + runname 
