@@ -114,11 +114,11 @@ def train(HYPERPARAMETERS):
             alt_rollouts = []
             alt_rollouts.append(rollouts[0])
             for index in range(1, len(rollouts)):
-                if not torch.allclose(rollouts[index-1][0][-1], rollouts[index][0][-1]):
+                if not torch.all(torch.eq(rollouts[index-1][0][-1], rollouts[index][0][-1])):
                     alt_rollouts.append(rollouts[index])
             rollouts = alt_rollouts
         
-        top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * min(len(rollouts), HYPERPARAMETERS['TOP_K_PERCENT']))]
+        top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * HYPERPARAMETERS['TOP_K_PERCENT'])]
 
         best_reward = top_k[0][1]
         

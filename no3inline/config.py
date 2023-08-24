@@ -8,16 +8,16 @@
 #################################################################    
 
 HYPERPARAMETERS = {
-    'RUN_NAME': 'test_N=6',
+    'RUN_NAME': 'test_N=14',
     'PROJECT': 'testing',
-    'N': 6,
+    'N': 14,
     'MODEL': 'convnet', # 'convnet' or 'resnet'
-    'LEARNING_RATE': 0.001,
+    'LEARNING_RATE': 0.0005,
     'N_ROLLOUTS': 100,
-    'N_EPOCHS': 200,
+    'N_EPOCHS': 1000,
     'N_ITER': 100,
     'TOP_K_PERCENT': 0.05,
-    'EPSILON': 0.1, # probability of random action
+    'EPSILON': 0.2, # probability of random action
     'REWARD_TYPE': 'laststate', # 'summed' or 'laststate',
     'DEDUPLICATION': True
 }
