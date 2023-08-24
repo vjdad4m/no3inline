@@ -7,6 +7,7 @@ import torch.optim as optim
 import tqdm
 import visualize
 from config import HYPERPARAMETERS
+import random
 
 import no3inline
 import no3inline.models
@@ -27,11 +28,20 @@ def generate_batched_rollout(model, N, BATCH_SIZE, device, reward_type):
     states = [torch.zeros((BATCH_SIZE, N * N)).float()]
 
     for _ in range(2 * N):
-        next_state_probabilities = model(states[-1].reshape((BATCH_SIZE, 1, N, N)).to(device)).cpu().detach()
-        next_state_probabilities = torch.softmax(next_state_probabilities, dim=1)
-        action = torch.multinomial(next_state_probabilities, num_samples=1).squeeze()
         new_state = states[-1].clone()
+        
+        # Select random acation with probability EPSILON
+        if torch.rand(1) > HYPERPARAMETERS['EPSILON']:
+            next_state_probabilities = model(states[-1].reshape((BATCH_SIZE, 1, N, N)).to(device)).cpu().detach()
+            next_state_probabilities = torch.softmax(next_state_probabilities, dim=1)
+            
+            action = torch.multinomial(next_state_probabilities, num_samples=1).squeeze()
+        else:
+            empty_cells = torch.where(new_state == 0)
+            action = [random.choice(empty_cells[1][empty_cells[0] == i]) for i in range(BATCH_SIZE)]
+
         new_state[torch.arange(BATCH_SIZE), action] = 1
+        
         states.append(new_state)
 
     rollouts = torch.stack(states).reshape((2 * N + 1, BATCH_SIZE, N * N))
@@ -83,6 +93,7 @@ def train(HYPERPARAMETERS):
     print(f'Number of trainable parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
 
     rollouts = []
+    previous_best_reward = HYPERPARAMETERS['N'] * HYPERPARAMETERS['N'] * 2
     tq = tqdm.trange(HYPERPARAMETERS['N_EPOCHS'])
     
     def reward_sort(pair1, pair2):
@@ -102,9 +113,9 @@ def train(HYPERPARAMETERS):
         if HYPERPARAMETERS['DEDUPLICATION']:
             alt_rollouts = []
             alt_rollouts.append(rollouts[0])
-            for i in range(1, len(rollouts)):
-                if not torch.allclose(rollouts[i-1][0][-1], rollouts[i][0][-1]):
-                    alt_rollouts.append(rollouts[i])
+            for index in range(1, len(rollouts)):
+                if not torch.allclose(rollouts[index-1][0][-1], rollouts[index][0][-1]):
+                    alt_rollouts.append(rollouts[index])
             rollouts = alt_rollouts
         
         top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * min(len(rollouts), HYPERPARAMETERS['TOP_K_PERCENT']))]
@@ -117,10 +128,18 @@ def train(HYPERPARAMETERS):
         wandb.log({'loss': np.mean(losses), 'best_reward': best_reward})
         
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
-        if i % 10 == 0:
-            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/gen_{i}')
+        if best_reward < previous_best_reward:
+            previous_best_reward = best_reward
+            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/N_{HYPERPARAMETERS["N"]}_R_{best_reward}_gen_{i}')
             wandb.log({"best_rollout": wandb.Image(plt)})
-            
+            plt.close(fig)
+
+        if best_reward == 0:
+            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/solution/solution_{i}')
+            print("Solution found!")
+            wandb.log({"solution": wandb.Image(plt)})
+            plt.close(fig)
+            break
 
         rollouts = rollouts[:HYPERPARAMETERS['N_ROLLOUTS'] * 4]
 
