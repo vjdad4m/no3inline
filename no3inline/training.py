@@ -11,6 +11,7 @@ import random
 
 import no3inline
 import no3inline.models
+from no3inline.gen_counterex_rollouts import gen_rollouts_for_counterex
 import wandb
 
 
@@ -90,6 +91,7 @@ def train(HYPERPARAMETERS):
     optimizer = optim.Adam(model.parameters(), lr=HYPERPARAMETERS['LEARNING_RATE'])
     criterion = nn.CrossEntropyLoss()
 
+    counterex = np.loadtxt(f"test/counterex_{HYPERPARAMETERS['N']}x{HYPERPARAMETERS['N']}.txt", delimiter=',', dtype=float)
     print(f'Number of trainable parameters = {sum(p.numel() for p in model.parameters() if p.requires_grad)}')
 
     rollouts = []
@@ -106,8 +108,9 @@ def train(HYPERPARAMETERS):
         return 1
 
     for i in tq:
-        rollouts.extend(generate_batched_rollout(model, HYPERPARAMETERS['N'], HYPERPARAMETERS['N_ROLLOUTS'], device, HYPERPARAMETERS['REWARD_TYPE']))
-    
+        #rollouts.extend(generate_batched_rollout(model, HYPERPARAMETERS['N'], HYPERPARAMETERS['N_ROLLOUTS'], device, HYPERPARAMETERS['REWARD_TYPE']))
+        rollouts.extend(gen_rollouts_for_counterex(HYPERPARAMETERS['N_ROLLOUTS'], HYPERPARAMETERS['N'], counterex))
+
         rollouts.sort(key = cmp_to_key(reward_sort))
 
         if HYPERPARAMETERS['DEDUPLICATION']:
@@ -121,21 +124,33 @@ def train(HYPERPARAMETERS):
         top_k = rollouts[:int(HYPERPARAMETERS['N_ROLLOUTS'] * min(len(rollouts), HYPERPARAMETERS['TOP_K_PERCENT']))]
 
         best_reward = top_k[0][1]
-        
+        best_state = top_k[0][0][-1]
+
         data = get_training_data(top_k, HYPERPARAMETERS['N'], device)
         losses = [train_epoch(data, model, criterion, optimizer, HYPERPARAMETERS['N']) for _ in range(HYPERPARAMETERS['N_ITER'])]
 
         wandb.log({'loss': np.mean(losses), 'best_reward': best_reward})
         
         tq.set_description(f'loss.: {np.mean(losses):.4f} best reward.: {best_reward}')
+
+        test_rollout = generate_batched_rollout(model, HYPERPARAMETERS['N'], 1, device, HYPERPARAMETERS['REWARD_TYPE'])
+        test_state, test_reward = test_rollout[0][-1], test_rollout[1]
+        wandb.log({'test_reward': test_reward})
+        fig = visualize.visualize_grid(test_state.view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/test_finalstate_{i}')
+        wandb.log({"test_rollout": wandb.Image(plt)})
+        plt.close(fig)
+
+        best_reward = test_reward
+        best_state = test_state
+
         if best_reward < previous_best_reward:
             previous_best_reward = best_reward
-            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/N_{HYPERPARAMETERS["N"]}_R_{best_reward}_gen_{i}')
+            fig = visualize.visualize_grid(best_state.view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/N_{HYPERPARAMETERS["N"]}_R_{best_reward}_gen_{i}')
             wandb.log({"best_rollout": wandb.Image(plt)})
             plt.close(fig)
 
         if best_reward == 0:
-            fig = visualize.visualize_grid(top_k[0][0][-1].view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/solution/solution_{i}')
+            fig = visualize.visualize_grid(best_state.view(HYPERPARAMETERS['N'], HYPERPARAMETERS['N']), f'./figures/solution/solution_{i}')
             print("Solution found!")
             wandb.log({"solution": wandb.Image(plt)})
             plt.close(fig)
